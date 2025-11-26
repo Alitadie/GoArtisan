@@ -30,21 +30,24 @@ jobs:
       with:
         go-version: '1.25'
 
-    # 安装依赖
-    - name: Download dependencies
+    # 1. 确保依赖干净
+    - name: Tidy Dependencies
       run: |
         go mod download
         go mod tidy
 
-    # 代码风格检查
-    - name: Run GolangCI-Lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m --out-format=colored-line-number
-        # 很多时候缓存会导致校验哈希不一致，如果遇到 cache error，暂时跳过缓存
-        skip-cache: true
-        # 也可以手动指定 skip-pkg-cache: true 如果仍然报错
+    # 2. 源码编译 GolangCI-Lint (核心修复点)
+    # 利用 runner 里的 Go 1.25 来编译 linter，这样它就变成了 Go 1.25 版本
+    - name: Install GolangCI-Lint from Source
+      run: |
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+    # 3. 运行检查
+    - name: Run Linter
+      run: |
+        # 由于是 go install 安装的，它会在 $(go env GOPATH)/bin 下
+        # actions/setup-go 会自动把这个目录加入 PATH，所以可以直接调
+        golangci-lint run --timeout=5m ./...
 
     # 运行单元测试
     - name: Run Tests
