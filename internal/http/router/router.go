@@ -38,6 +38,7 @@ func NewRouter(
 	// 1. 全局中间件
 	r.Use(gin.Recovery())
 	r.Use(middleware.LoggerMiddleware(logger)) // 自定义结构化日志中间件
+	r.Use(middleware.VersionMiddleware())      // 👈 新增
 
 	// 公开路由
 	public := r.Group("/api")
