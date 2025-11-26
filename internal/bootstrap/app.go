@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	"go-artisan/internal/config"
+	"go-artisan/internal/http/handler"
 	"go-artisan/internal/http/router"
 	"go-artisan/internal/provider"
+	"go-artisan/internal/repository"
+	"go-artisan/internal/service"
 
 	"log/slog"
 
@@ -14,12 +17,32 @@ import (
 	"go.uber.org/fx"
 )
 
-// Module 将核心模块打包
+// RepositoryModule 定义仓储层的所有注入
+var RepositoryModule = fx.Options(
+	fx.Provide(repository.NewUserRepo),
+)
+
+// ServiceModule 定义服务层的所有注入
+var ServiceModule = fx.Options(
+	fx.Provide(service.NewUserService),
+)
+
+// HandlerModule 定义控制器层
+var HandlerModule = fx.Options(
+	fx.Provide(handler.NewWelcomeHandler), // 原来的
+	fx.Provide(handler.NewUserHandler),    // 新增的
+)
+
 var Module = fx.Options(
-	fx.Provide(NewConfig), // 注入配置
-	fx.Provide(NewLogger), // 注入日志
-	provider.Module,       // 注入 DB/Redis
-	router.Module,         // 注入路由与 Handler
+	fx.Provide(NewConfig),
+	fx.Provide(NewLogger),
+	provider.Module, // DB
+
+	RepositoryModule, // 注入 Repo
+	ServiceModule,    // 注入 Service
+	HandlerModule,    // 注入 Handler
+
+	router.Module, // 注入 Router (它现在依赖上面的 Handlers)
 )
 
 func NewConfig() (*config.Config, error) {

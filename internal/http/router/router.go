@@ -25,7 +25,8 @@ var Module = fx.Options(
 func NewRouter(
 	cfg *config.Config,
 	logger *slog.Logger,
-	welcomeHandler *handler.WelcomeHandler, // 自动注入 Handler
+	welcomeHandler *handler.WelcomeHandler,
+	userHandler *handler.UserHandler, // <-- 新增注入参数
 ) *gin.Engine {
 
 	// 设置运行模式
@@ -44,6 +45,7 @@ func NewRouter(
 	{
 		api.GET("/hello", welcomeHandler.Index)
 		// 未来可以通过 go generate 自动往这里追加代码
+		api.POST("/register", userHandler.Register) // <-- 注册路由
 	}
 
 	// 健康检查
