@@ -1,0 +1,11 @@
+app:
+  name: "GoArtisan"
+  env: "local"
+  port: 8080
+
+database:
+  dsn: "root:root@tcp(127.0.0.1:3306)/go_artisan?charset=utf8mb4&parseTime=True&loc=Local"
+
+log:
+  level: "debug"
+  format: "json"
