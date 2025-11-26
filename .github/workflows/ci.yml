@@ -32,13 +32,19 @@ jobs:
 
     # 安装依赖
     - name: Download dependencies
-      run: go mod download
+      run: |
+        go mod download
+        go mod tidy
 
     # 代码风格检查
     - name: Run GolangCI-Lint
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v6
       with:
-        version: v1.55.2
+        version: latest
+        args: --timeout=5m --out-format=colored-line-number
+        # 很多时候缓存会导致校验哈希不一致，如果遇到 cache error，暂时跳过缓存
+        skip-cache: true
+        # 也可以手动指定 skip-pkg-cache: true 如果仍然报错
 
     # 运行单元测试
     - name: Run Tests
