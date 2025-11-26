@@ -1,0 +1,56 @@
+run:
+  timeout: 5m
+  tests: true
+  # 允许 Go 1.25 的新特性 (如有)
+  go: '1.25'
+
+linters-settings:
+  govet:
+    # 检查 shadowed variables (同名变量遮盖)
+    check-shadowing: true
+  gocyclo:
+    # 圈复杂度阈值，函数太复杂了要报警
+    min-complexity: 15
+  maligned:
+    # 建议优化结构体内存对齐
+    suggest-new: true
+  dupl:
+    # 代码重复检测阈值
+    threshold: 100
+  goconst:
+    # 字符串出现 3 次以上建议定义为常量
+    min-len: 2
+    min-occurrences: 3
+
+linters:
+  disable-all: true
+  enable:
+    # --- 基础类 ---
+    - gofmt       # 格式化
+    - govet       # 官方 vet
+    - gosimple    # 简化代码建议
+    - ineffassign # 无效赋值
+    - staticcheck # 静态检查 (非常好用)
+    - typecheck   # 类型检查 (这次报错的主角)
+    - unused      # 未使用变量/函数
+
+    # --- 代码质量 ---
+    - gocyclo     # 圈复杂度 (代码逻辑别太绕)
+    - gosec       # 安全检查 (SQL注入/硬编码密码等)
+    - bodyclose   # HTTP Response Body 是否关闭 (这很重要)
+    - errcheck    # 必须检查 error
+    - unconvert   # 不必要的类型转换
+
+issues:
+  # 排除掉 mock 文件，不要对生成的代码进行 lint
+  exclude-dirs:
+    - internal/domain/mocks
+    - migrations
+
+  exclude-rules:
+    # 测试代码放宽限制
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - gosec

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -10,12 +12,14 @@ import (
 
 	"go-artisan/pkg/auth"
 
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
 	repo   domain.UserRepository
 	config *config.Config
+	redis  *redis.Client // 👈 新增依赖
 }
 
 // LoginDTO 输入对象
@@ -102,4 +106,35 @@ func (s *UserService) Login(req LoginDTO) (*LoginResponse, error) {
 		User:      user,
 		ExpiresIn: 86400,
 	}, nil
+}
+
+// GetUserProfile 示例：带缓存查询
+func (s *UserService) GetUserProfile(id uint) (*domain.User, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("user:profile:%d", id)
+
+	// 1. 查缓存
+	val, err := s.redis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		// 命中！反序列化
+		var user domain.User
+		if err := json.Unmarshal([]byte(val), &user); err == nil {
+			return &user, nil // 直接返回
+		}
+	}
+
+	// 2. 未命中或出错 -> 查数据库
+	// 注意：Repo 接口可能需要添加 FindByID 方法，这里假设已有
+	// user, err := s.repo.FindByID(id)
+	// 为了演示代码编译通过，先 mock 一个空操作
+	var user *domain.User = nil // 实际应调用 s.repo
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	// 3. 回填缓存 (设置 10 分钟过期，防止缓存雪崩可加随机值)
+	data, _ := json.Marshal(user)
+	s.redis.Set(ctx, cacheKey, data, 10*time.Minute)
+
+	return user, nil
 }

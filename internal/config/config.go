@@ -13,6 +13,14 @@ import (
 type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Redis    RedisConfig    `mapstructure:"redis"` // 👈 新增这一行
+}
+
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Username string `mapstructure:"username"` // 即使为空，mapstructure 也会赋值为 ""
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 type AppConfig struct {
@@ -70,6 +78,12 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("database.dsn", "DB_DSN")
 	_ = v.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
 	_ = v.BindEnv("database.max_open_conns", "DB_MAX_OPEN_CONNS")
+
+	// 绑定 Redis
+	_ = v.BindEnv("redis.addr", "REDIS_ADDR")
+	_ = v.BindEnv("redis.username", "REDIS_USERNAME")
+	_ = v.BindEnv("redis.password", "REDIS_PASSWORD")
+	_ = v.BindEnv("redis.db", "REDIS_DB")
 
 	// 7. 解析
 	var c Config
