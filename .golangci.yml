@@ -6,8 +6,8 @@ run:
 
 linters-settings:
   govet:
-    # 检查 shadowed variables (同名变量遮盖)
-    check-shadowing: true
+    enable:
+      - shadow
   gocyclo:
     # 圈复杂度阈值，函数太复杂了要报警
     min-complexity: 15

@@ -82,7 +82,7 @@ func (s *UserService) Login(req LoginDTO) (*LoginResponse, error) {
 	}
 
 	// 2. 比对密码
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid credentials") // 模糊报错为了安全
 	}
 
@@ -116,7 +116,7 @@ func (s *UserService) GetUserProfile(id uint) (*domain.User, error) {
 	val, err := s.redis.Get(ctx, cacheKey).Result()
 	if err == nil {
 		var user domain.User
-		if err := json.Unmarshal([]byte(val), &user); err == nil {
+		if uErr := json.Unmarshal([]byte(val), &user); uErr == nil {
 			return &user, nil
 		}
 	}
