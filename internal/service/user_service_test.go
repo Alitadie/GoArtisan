@@ -37,7 +37,7 @@ func TestUserService_Login(t *testing.T) {
 	}
 
 	// 4. 初始化被测 Service
-	svc := service.NewUserService(mockRepo, mockConfig)
+	svc := service.NewUserService(mockRepo, mockConfig, nil)
 
 	// 5. 准备测试数据
 	validEmail := "test@example.com"

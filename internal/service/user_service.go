@@ -35,8 +35,8 @@ type LoginResponse struct {
 	ExpiresIn int          `json:"expires_in"`
 }
 
-func NewUserService(repo domain.UserRepository, cfg *config.Config) *UserService {
-	return &UserService{repo: repo, config: cfg}
+func NewUserService(repo domain.UserRepository, cfg *config.Config, rdb *redis.Client) *UserService {
+	return &UserService{repo: repo, config: cfg, redis: rdb}
 }
 
 // RegisterDTO 输入对象
@@ -108,7 +108,6 @@ func (s *UserService) Login(req LoginDTO) (*LoginResponse, error) {
 	}, nil
 }
 
-// GetUserProfile 示例：带缓存查询
 func (s *UserService) GetUserProfile(id uint) (*domain.User, error) {
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf("user:profile:%d", id)
@@ -116,24 +115,21 @@ func (s *UserService) GetUserProfile(id uint) (*domain.User, error) {
 	// 1. 查缓存
 	val, err := s.redis.Get(ctx, cacheKey).Result()
 	if err == nil {
-		// 命中！反序列化
 		var user domain.User
 		if err := json.Unmarshal([]byte(val), &user); err == nil {
-			return &user, nil // 直接返回
+			return &user, nil
 		}
 	}
 
-	// 2. 未命中或出错 -> 查数据库
-	// 注意：Repo 接口可能需要添加 FindByID 方法，这里假设已有
-	// user, err := s.repo.FindByID(id)
-	// 为了演示代码编译通过，先 mock 一个空操作
-	var user *domain.User = nil // 实际应调用 s.repo
-	if user == nil {
-		return nil, errors.New("user not found")
+	// 2. 查数据库 (❌ 不要写 nil，要写真调用)
+	user, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
 	}
 
-	// 3. 回填缓存 (设置 10 分钟过期，防止缓存雪崩可加随机值)
+	// 3. 回填缓存
 	data, _ := json.Marshal(user)
+	// 建议设置 TTL，防止数据永久不一致
 	s.redis.Set(ctx, cacheKey, data, 10*time.Minute)
 
 	return user, nil
