@@ -48,7 +48,7 @@ var Module = fx.Options(
 
 	router.Module, // 注入 Router (它现在依赖上面的 Handlers)
 
-	fx.Invoke(Start), // 调用启动逻辑
+	// fx.Invoke(Start), // 调用启动逻辑
 )
 
 func NewConfig() (*config.Config, error) {

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------
+  # 应用服务
+  # ----------------------------------------
+  app:
+    build: .  # 使用当前目录构建 Dockerfile
+    container_name: go-artisan-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=local
+      - APP_PORT=8080
+      # 连接 docker 内的 database 服务，host名就是 service 名
+      - DB_DSN=artisan:secret@tcp(database:3306)/go_artisan?charset=utf8mb4&parseTime=True&loc=Local
+      - JWT_SECRET=docker_secret_key
+    depends_on:
+      - database
+
+  # ----------------------------------------
+  # MySQL 服务
+  # ----------------------------------------
+  database:
+    image: mysql:8.0
+    container_name: go-artisan-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: go_artisan
+      MYSQL_USER: artisan
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3306:3306" # 映射到宿主机，方便你用 Navicat 连接
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
