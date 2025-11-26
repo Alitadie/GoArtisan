@@ -1,11 +1,14 @@
 package handler
 
 import (
-	"net/http"
+	// 引入新包 (起别名避免冲突)
 
 	"go-artisan/internal/service"
+	"go-artisan/pkg/response"
 
 	"log/slog"
+
+	myvalidator "go-artisan/pkg/validator" // 引入新包 (起别名避免冲突)
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,14 +30,17 @@ type registerRequest struct {
 
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registerRequest
-	// 1. 验证参数
+	// 1. 参数绑定与验证
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Warn("Register bind error", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		h.logger.Warn("Register validation error", "err", err)
+
+		// 使用我们的翻译工具和响应包
+		errMsgs := myvalidator.Translate(err)
+		response.ValidationError(c, errMsgs)
 		return
 	}
 
-	// 2. 调用业务服务
+	// 2. 调用服务
 	user, err := h.svc.Register(service.RegisterDTO{
 		Name:     req.Name,
 		Email:    req.Email,
@@ -42,11 +48,14 @@ func (h *UserHandler) Register(c *gin.Context) {
 	})
 
 	if err != nil {
-		h.logger.Error("Register failed", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// 这里的 err 是业务错误（如：邮箱已存在）
+		// 在 V2 中我们会定义统一的 ErrEmailExists 业务错误码
+		h.logger.Error("Register service error", "err", err)
+		response.Error(c, 500, err.Error())
 		return
 	}
 
-	// 3. 返回响应 (隐式屏蔽了 Password 字段)
-	c.JSON(http.StatusCreated, user)
+	// 3. 成功返回
+	// 注意：user 里面可能包含一些你不想要额外字段，V2 里我们会做 DTO->VO 转换
+	response.Success(c, user)
 }

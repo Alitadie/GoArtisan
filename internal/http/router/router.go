@@ -13,8 +13,6 @@ import (
 
 // Module 将 Handler 和 Router 导出给 FX 容器
 var Module = fx.Options(
-	// 注册 Handler (类似于 Laravel 的 Service Provider)
-	fx.Provide(handler.NewWelcomeHandler),
 
 	// 注册 Router 构造函数
 	fx.Provide(NewRouter),

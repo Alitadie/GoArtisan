@@ -10,6 +10,7 @@ import (
 	"go-artisan/internal/provider"
 	"go-artisan/internal/repository"
 	"go-artisan/internal/service"
+	"go-artisan/pkg/validator"
 
 	"log/slog"
 
@@ -56,6 +57,10 @@ func NewLogger(cfg *config.Config) *slog.Logger {
 
 // Start 启动 HTTP Server
 func Start(lifecycle fx.Lifecycle, cfg *config.Config, r *gin.Engine) {
+
+	// 核心修复点：在这里调用独立的初始化
+	validator.Init()
+
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			addr := fmt.Sprintf(":%d", cfg.App.Port)
