@@ -1,61 +1,61 @@
 package config
 
 import (
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
-// Config 聚合所有配置项
-// mapstructure 标签用于 viper 将 yaml 字段映射到结构体
 type Config struct {
-	App      App      `mapstructure:"app"`
-	Database Database `mapstructure:"database"`
-	Log      Log      `mapstructure:"log"`
+	App      AppConfig      `mapstructure:"app"`
+	Database DatabaseConfig `mapstructure:"database"`
 }
 
-type App struct {
+type AppConfig struct {
 	Name string `mapstructure:"name"`
-	Env  string `mapstructure:"env"` // local, production
+	Env  string `mapstructure:"env"`
 	Port int    `mapstructure:"port"`
-	URL  string `mapstructure:"url"`
 }
 
-type Database struct {
-	Driver string `mapstructure:"driver"`
-	DSN    string `mapstructure:"dsn"`
+type DatabaseConfig struct {
+	DSN             string        `mapstructure:"dsn"`
+	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+	MaxOpenConns    int           `mapstructure:"max_open_conns"`
+	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
 }
 
-type Log struct {
-	Level  string `mapstructure:"level"`  // debug, info, error
-	Format string `mapstructure:"format"` // json, text
-}
-
-// Load 读取配置文件的逻辑
-func Load(configPath string) (*Config, error) {
+func Load(path string) (*Config, error) {
 	v := viper.New()
 
-	// 1. 设置配置文件的路径和名称
-	// 如果传入 configPath 为空，默认查找 configs/config.yaml
-	v.SetConfigFile(configPath)
+	// 1. 设置配置文件路径和格式
+	v.AddConfigPath(path)     // e.g. "configs"
+	v.AddConfigPath(".")      // 支持从根目录找
+	v.SetConfigName("config") // 文件名 config.yaml
+	v.SetConfigType("yaml")
 
-	// 2. 允许环境变量覆盖 (像 Laravel 的 .env)
-	// 例如: export APP_PORT=9090 会覆盖 config.yaml 里的 port
-	v.AutomaticEnv()
-	// 将点号分隔符转换为下划线 (App.Port -> APP_PORT)
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// 3. 读取配置文件
+	// 2. 读取 YAML 默认值
 	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, err // 只有文件存在但格式错误才报错
+		}
 	}
 
-	// 4. 将读取到的值映射到 Config 结构体
+	// 3. 环境变量覆盖 (.env 或 系统变量)
+	// Laravel: DB_DSN -> Go: database.dsn
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.SetEnvPrefix("") // 如果需要前缀如 APP_，这里设置
+	v.AutomaticEnv()
+
+	// 4. 手动绑定环境变量映射 (解决 Viper 嵌套结构映射问题)
+	// 这里将 yaml 里的 "database.dsn" 绑定到 环境变量 "DB_DSN"
+	_ = v.BindEnv("database.dsn", "DB_DSN")
+	_ = v.BindEnv("database.max_idle_conns", "DB_MAX_IDLE_CONNS")
+	_ = v.BindEnv("database.max_open_conns", "DB_MAX_OPEN_CONNS")
+
 	var c Config
 	if err := v.Unmarshal(&c); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+		return nil, err
 	}
-
 	return &c, nil
 }
