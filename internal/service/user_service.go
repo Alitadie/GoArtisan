@@ -7,14 +7,14 @@ import (
 
 	"go-artisan/internal/config"
 	"go-artisan/internal/domain"
-	"go-artisan/internal/repository" // 注意不要让 Service 依赖具体 DB，而应依赖 Interface，这里为了 MVP 简化直接依赖 struct
+
 	"go-artisan/pkg/auth"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo   *repository.UserRepo
+	repo   domain.UserRepository
 	config *config.Config
 }
 
@@ -31,7 +31,7 @@ type LoginResponse struct {
 	ExpiresIn int          `json:"expires_in"`
 }
 
-func NewUserService(repo *repository.UserRepo, cfg *config.Config) *UserService {
+func NewUserService(repo domain.UserRepository, cfg *config.Config) *UserService {
 	return &UserService{repo: repo, config: cfg}
 }
 

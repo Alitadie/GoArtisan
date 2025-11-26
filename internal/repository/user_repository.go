@@ -12,7 +12,7 @@ type UserRepo struct {
 }
 
 // NewUserRepo 构造函数，自动注入 gorm.DB
-func NewUserRepo(db *gorm.DB) *UserRepo {
+func NewUserRepo(db *gorm.DB) domain.UserRepository {
 	return &UserRepo{db: db}
 }
 
