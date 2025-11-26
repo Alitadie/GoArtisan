@@ -4,6 +4,7 @@ import (
 	"go-artisan/internal/config"
 	"go-artisan/internal/http/handler"
 	"go-artisan/internal/http/middleware"
+	"go-artisan/pkg/response"
 
 	"log/slog"
 
@@ -38,18 +39,29 @@ func NewRouter(
 	r.Use(gin.Recovery())
 	r.Use(middleware.LoggerMiddleware(logger)) // 自定义结构化日志中间件
 
-	// 2. 路由定义 (像 Laravel 的 routes/web.php)
-	api := r.Group("/api")
+	// 公开路由
+	public := r.Group("/api")
 	{
-		api.GET("/hello", welcomeHandler.Index)
-		// 未来可以通过 go generate 自动往这里追加代码
-		api.POST("/register", userHandler.Register) // <-- 注册路由
+		public.GET("/hello", func(ctx *gin.Context) {
+			response.Success(ctx, gin.H{"status": "public"})
+		})
+		public.POST("/register", userHandler.Register)
+		public.POST("/login", userHandler.Login) // 👈 新增
 	}
 
-	// 健康检查
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+	// 保护路由 (类似 Laravel Route::middleware('auth:api'))
+	protected := r.Group("/api")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.GET("/user/profile", func(c *gin.Context) {
+			// 获取中间件塞入的 userID
+			uid, _ := c.Get("userID")
+			response.Success(c, gin.H{
+				"message": "You are accessing protected data",
+				"your_id": uid,
+			})
+		})
+	}
 
 	return r
 }

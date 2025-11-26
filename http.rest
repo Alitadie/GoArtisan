@@ -1,5 +1,5 @@
 POST http://localhost:8080/api/register
-Content-Type: "application/json"
+Content-Type: application/json
 
 {"name":"test", "password":""}
 
@@ -7,3 +7,16 @@ Content-Type: "application/json"
 POST http://localhost:8080/api/register
 
 {"name":"test1", "password":"123456", "email":"test2@163.com"}
+
+###
+POST http://localhost:8080/api/login
+
+{"email":"test2@163.com", "password":"123456"}
+
+###
+GET http://localhost:8080/api/user/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJpc3MiOiJnby1hcnRpc2FuIiwiZXhwIjoxNzY0MjQ2Nzc5LCJpYXQiOjE3NjQxNjAzNzl9.t_QGRnZ25L9ORpKHa1ZGvP0bq20-HXjhs3q8nRmItII
+
+###
+GET http://localhost:8080/api/user/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJpc3MiOiJnby1hcnRpc2FuIiwiZXhwIjoxNzY0MjQ2Nzc5LCJpYXQiOjE3NjQxNjAzNzl9.t_QGRnZ25L9ORpKHa1ZGvP0bq20-HXjhs3q8nRmItDD

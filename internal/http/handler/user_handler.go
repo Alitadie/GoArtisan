@@ -18,6 +18,12 @@ type UserHandler struct {
 	logger *slog.Logger
 }
 
+// 增加结构体定义
+type loginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
 func NewUserHandler(svc *service.UserService, logger *slog.Logger) *UserHandler {
 	return &UserHandler{svc: svc, logger: logger}
 }
@@ -58,4 +64,25 @@ func (h *UserHandler) Register(c *gin.Context) {
 	// 3. 成功返回
 	// 注意：user 里面可能包含一些你不想要额外字段，V2 里我们会做 DTO->VO 转换
 	response.Success(c, user)
+}
+
+func (h *UserHandler) Login(c *gin.Context) {
+	var req loginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, myvalidator.Translate(err))
+		return
+	}
+
+	res, err := h.svc.Login(service.LoginDTO{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+
+	if err != nil {
+		h.logger.Warn("Login failed", "email", req.Email, "error", err)
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	response.Success(c, res)
 }
