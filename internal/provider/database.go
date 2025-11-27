@@ -10,7 +10,8 @@ import (
 
 var Module = fx.Options(
 	fx.Provide(NewDatabase),
-	fx.Provide(NewRedis), // 👈 注册 Redis
+	fx.Provide(NewRedis),          // 👈 注册 Redis
+	fx.Provide(NewCasbinEnforcer), // 👈 注册 Casbin
 )
 
 // NewDatabase 负责初始化 DB 并设置连接池参数
